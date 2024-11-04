@@ -7,7 +7,7 @@ module.exports.checkPassword = (req,res) =>{
     const {password} = req.body;
     const checkQuery = `SELECT * FROM users WHERE password =?`;
     const checkValues = [password];
-    mysqlCon.query(checkQuery,checkValues, (checkError, checkResults) =>{
+    mysqlConnection.execute(checkQuery,checkValues, (checkError, checkResults) =>{
         if(checkError){
             console.error('Error checking password:', checkError);
             return res.status(500).json({ error: 'Error checking password' });
@@ -21,7 +21,7 @@ module.exports.checkEmailExist = (req,res) =>{
     const {email} = req.body;
     const checkQuery = `SELECT * FROM users WHERE email =?`;
     const checkValues = [email];
-    mysqlCon.query(checkQuery,checkValues, (checkError, checkResults) =>{
+    mysqlConnection.execute(checkQuery,checkValues, (checkError, checkResults) =>{
         if(checkError){
             console.error('Error checking email existence:', checkError);
             return res.status(500).json({ error: 'Error checking email existence' });
@@ -41,7 +41,7 @@ module.exports.validateAccountLogin = (req,res) =>{
     const checkQuery = `SELECT * FROM users WHERE email =? AND password =?`;
     const checkValues = [email, password];
 
-    mysqlCon.query(checkQuery, checkValues, (checkError, checkResult) =>{
+    mysqlConnection.execute(checkQuery, checkValues, (checkError, checkResult) =>{
         if(checkError){
             console.error('Error checking account login:', checkError);
             return res.status(500).json({ error: 'Error checking account login' });
@@ -62,7 +62,7 @@ module.exports.createCustomer = (req, res) =>{
     const checkQuery = `SELECT email FROM users`;
     const checkValues =[email];
 
-    mysqlCon.query(checkQuery, checkValues, (checkError, checkResult) => {
+    mysqlConnection.execute(checkQuery, checkValues, (checkError, checkResult) => {
         if (checkError) {
             console.error('Error checking user:', checkError);
             return res.status(500).json({ error: 'Error checking user' });
@@ -76,7 +76,7 @@ module.exports.createCustomer = (req, res) =>{
                                 values (?,?,?,?,?, Customer)`;
             const insertValues = [last_Name, first_Name, email, password, contact_No, role];
 
-            mysqlCon.query(insertQuery, insertValues, (insertError,insertResult) =>{
+            mysqlConnection.execute(insertQuery, insertValues, (insertError,insertResult) =>{
                 if(insertError){
                     console.error('Error creating customer:', insertError);
                     return res.status(500).json({ error: 'Error creating customer Account' });
@@ -149,91 +149,55 @@ module.exports.createShopManager = (req, res) =>{
         }
     })
 }
-module.exports.createUser = (req, res) =>{
-    const {last_Name, first_Name, username, email, password, user_Mobile_Num, role, manager_id, shop_id} = req.body;
-    const checkQuery = `SELECT * FROM users WHERE email =? OR username = ?`;
-    const checkValues = [email, username];
 
-    // Check if email or username already exists in the database
-    mysqlCon.query(checkQuery, checkValues, (checkError, checkResult) => {
-        if (checkError) {
-            console.error('Error checking user:', checkError);
-            return res.status(500).json({ error: 'Error checking user' });
-        }
+// Get the details of the Shop Manager
+module.exports.getManager = (req, res) => {
+    const{ last_Name, first_Name, email, role, shop_id} = req.body;
 
-        if (checkResult.length > 0) {
-            // Either email or username already exists
-            return res.status(400).json({ error: 'Email or Username already exists' });
-        } else {
-            // If account isn't found in the DB
-            // Proceed with creating the user
-            const insertQuery = `INSERT INTO user (last_Name, first_Name, username, email, password, user_Mobile_Num, role, manager_id, shop_id) 
-                                 VALUES (?, ?, ?, ?, ?, ?)`;
-            const insertValues = [last_Name, first_Name, email, username, password, user_Mobile_Num, role, manager_id, shop_id];
+    const query = `SELECT last_Name FROM user WHERE role = 'Manager' AND shop_id = ?`;
 
-            mysqlCon.query(insertQuery, insertValues, (insertError, insertResult) => {
-                if (insertError) {
-                    console.error('Error creating user:', insertError);
-                    return res.status(500).json({ error: 'Error creating user' });
-                }
-
-                res.status(201).json(insertResult);
-            })
-        }
-    })
-}
-
-// Read
-module.exports.getUsers = (req, res) => {
-    const query = 'SELECT * FROM user'
-
-    mysqlCon.query(query, (error, results) => {
+    const values = [last_Name,first_Name,email,role,shop_id];
+    
+    mysqlConnection.execute(query, values, (error, result) => {
         if (error) {
-            console.error('Error fetching users:', error);
-            return res.status(500).json({ error: 'Error fetching users' });
+            console.error('Error fetching managers:', error);
+            return res.status(500).json({ error: 'Error fetching managers' });
         }
-
-        res.status(200).json(results);
-    })
-}
-
-
-module.exports.getUser = (req, res) => {
-    const { username, password } = req.body;
-
-    const query = 'SELECT * FROM user WHERE username = ? AND password = ?'
-
-    const values = [username, password];
-
-    mysqlCon.query(query, values, (error, result) => {
-        if (error) {
-            console.error('Error fetching user:', error);
-            return res.status(500).json({ error: 'Error fetching user' });
-        }
-        
-        if (result.length > 0) {
+        if(result.length > 0){
             res.status(200).json(result);
-        } else {
-            res.status(404).json({ error: 'User not found' });
+        }else{
+            res.status(404).json({error: 'Manager not found'});
         }
     })
 }
 
-// Update
-module.exports.updateUser = (req, res) => {
-    const { lastName, firstName, email, username, password, userType } = req.body;
+// Update User account
+module.exports.editUserAccount = (req, res) =>{
+    const {last_Name, first_Name, email, contact_No, password} = req.body;
+    const query = `UPDATE user set last_Name = ?, first_Name = ?, email = ?, password = ? WHERE user_id = ?`;
+    const values = [last_Name, first_name, email, contact_No, password, req.params.id];
 
-    const query = `UPDATE user SET lastName = ?, firstName = ?, email = ?, username = ?, password = ?, userType = ? WHERE user_id = ?`;
-
-    const values = [lastName, firstName, email, username, password, userType, req.params.id];
-
-    mysqlCon.query(query, values, (error, result) => {
+    mysqlConnection.execute(query, values, (error, result) => {
         if (error) {
-            console.error('Error updating user:', error);
-            return res.status(500).json({ error: 'Error updating user' });
+            console.error('Error updating customer description:', error);
+            return res.status(500).json({ error: 'Error updating customer account' });
         }
+        res.status(200).json(result);
+        res.status(200).json({message: "Customer Account updated"});
+    })
+}
 
-        res.status(200).json({ message: 'User updated' })
+module.exports.deleteUserAcount = (req,res) =>{
+    const query = `DELETE FROM user where user_id =?`;
+    const values = [req.params.id];
+
+    mysqlConnection.execute(query, values, (error, result) => {
+        if(error){
+            console.error ('Error deleting user:', error);
+            return res.status(500).json({error: 'Error deleting your account'});
+        }
+        res.status (200).json(result);
+        res.status(200).json({ message: ' User account has been deleted'});
     })
 }
 
@@ -249,7 +213,7 @@ module.exports.deleteUser = (req, res) => {
             console.error('Error deleting user:', error);
             return res.status(500).json({ error: 'Error deleting user' });
         }
-
+        res.status(200).json(result);
         res.status(200).json({ message: 'User deleted' })
     })
 }
