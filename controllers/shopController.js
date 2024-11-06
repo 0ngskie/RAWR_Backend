@@ -22,7 +22,24 @@ module.exports.registerRepairShop = (req, res) => {
 
 // Read
 
-module.exports. locateRepairShop = (req,res) => {
+module.exports.validateShopPageStatus = (req,res)=>{
+    const{shop_Page_Status} = req.body;
+    const checkQuery =`SELECT shop_Page_Status FROM shops WHERE shop_Name = ? OR shop_Address = ?`;
+    const checkValues = [shop_Page_Status, req.params.shop_Name, req.params.shop_Address];
+
+    mysqlConnection.execute(checkQuery, checkValues, (checkError,checkResult) =>{
+        if(checkError){
+            console.error('Error getting shop status:', error);
+            return res.status(500).json({error: 'Error getting shop status from server'});
+        }
+        if(checkResult.length > 0){
+            res.status(200).json({message: 'Shop Page status is found and dispatched successfully'});
+            res.status(200).json({result: checkResult});
+        };
+    });
+};
+
+module.exports.locateRepairShop = (req,res) => {
     const{shop_Name, shop_Address,shop_Coordinates,shop_Page_Payment_Method} = req.body;
     const query = `SELECT shop_Name, shop_Address, shop_Coordinates FROM shop WHERE shop_Name = ? OR shop_Address = ? OR shop_Page_Payment_Method = ?`;
     const values = [shop_Name, shop_Address, shop_Coordinates, shop_Page_Payment_Method, req.params.shop_Name, req.params.shop_Address, req.params.shop_Page_Payment_Method];
@@ -40,36 +57,19 @@ module.exports. locateRepairShop = (req,res) => {
 };
 
 module.exports.displayShopPage = (req, res) => {
-    const{shop_Page_Status} = req.body;
-    const checkQuery =`SELECT shop_Page_Status FROM shops WHERE shop_Name = ? OR shop_Address = ?`;
-    const checkValues = [shop_Page_Status, req.params.shop_Name, req.params.shop_Address];
+    //TODO find a way to display Comment (bro... just use JOIN LOL) (Thanks Personality 2 <3)
+    const{shop_Name,shop_Address, shop_AboutUs,shop_Service_Offer, shop_Mobile_No, shop_Landline_No,shop_Picture_Filepath, shop_Page_Payment_Method} = req.body;
+    const query = `SELECT shop_Name, shop_Address, shop_About_Us, shop_Service_Offer, shop_Mobile_No, shop_Picture_Filepath, shop_Page_Payment_Method FROM shops`;
+    const values = [shop_Name, shop_Address, shop_AboutUs, shop_Service_Offer, shop_Mobile_No, shop_Landline_No, shop_Picture_Filepath, shop_Page_Payment_Method];
 
-    mysqlConnection.execute(checkQuery, checkValues, (checkError,checkResult) =>{
-        if(checkError){
-            console.error('Error getting shop status:', error);
-            return res.status(500).json({error: 'Error getting shop status from server'});
+    mysqlConnection.execute(query,values, (error, result) => {
+        if(error){
+            console.error('Error getting repairshops:', error);
+            return res.status(500).json({error: 'Error getting shop details from server'});
         }
-        if(checkResult.length > 0){
-            res.status(200).json({message: 'Shop Page status is found and dispatched successfully'});
-            res.status(200).json({result: checkResult});
-
-            //TODO find a way to display Comment (bro... just use JOIN LOL) (Thanks Personality 2 <3)
-            const{shop_Name,shop_Address, shop_AboutUs,shop_Service_Offer, shop_Mobile_No, shop_Landline_No,shop_Picture_Filepath, shop_Page_Payment_Method} = req.body;
-            const query = `SELECT shop_Name, shop_Address, shop_About_Us, shop_Service_Offer, shop_Mobile_No, shop_Picture_Filepath, shop_Page_Payment_Method FROM shops`;
-            const values = [shop_Name, shop_Address, shop_AboutUs, shop_Service_Offer, shop_Mobile_No, shop_Landline_No, shop_Picture_Filepath, shop_Page_Payment_Method];
-
-            mysqlConnection.execute(query,values, (error, result) => {
-                if(error){
-                    console.error('Error getting repairshops:', error);
-                    return res.status(500).json({error: 'Error getting shop details from server'});
-                }
-                res.status(200).json({message: 'Shop Page is found and dispatched successfully'});
-                res.status(200).json({result: result});
-                
-            });
-        }
-        
-    });    
+        res.status(200).json({message: 'Shop Page is found and dispatched successfully'});
+        res.status(200).json({result: result});
+    });
 };
 
 // Update
