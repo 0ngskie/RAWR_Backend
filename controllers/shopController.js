@@ -1,4 +1,5 @@
 const Shop = require('models/shops');
+const User =require('models/users'); 
 const mysqlConnection = require('mysql/mysqlConnection');
 
 
@@ -22,10 +23,10 @@ module.exports.registerRepairShop = (req, res) => {
 
 // Read
 
-module.exports.validateShopPageStatus = (req,res)=>{
-    const{shop_Page_Status} = req.body;
+module.exports.validateShopPageStatus = (req,res) => {
+    const{shop_id, shop_Page_Status, shop_Name, shop_Address} = req.body;
     const checkQuery =`SELECT shop_Page_Status FROM shops WHERE shop_Name = ? OR shop_Address = ?`;
-    const checkValues = [shop_Page_Status, req.params.shop_Name, req.params.shop_Address];
+    const checkValues = [shop_id, req.shop_id, shop_Page_Status, shop_Name, req.params.shop_Name, shop_Address, req.params.shop_Address];
 
     mysqlConnection.execute(checkQuery, checkValues, (checkError,checkResult) =>{
         if(checkError){
@@ -35,32 +36,38 @@ module.exports.validateShopPageStatus = (req,res)=>{
         if(checkResult.length > 0){
             res.status(200).json({message: 'Shop Page status is found and dispatched successfully'});
             res.status(200).json({result: checkResult});
-        };
+        }
     });
 };
 
 module.exports.locateRepairShop = (req,res) => {
     const{shop_Name, shop_Address,shop_Coordinates,shop_Page_Payment_Method} = req.body;
-    const query = `SELECT shop_Name, shop_Address, shop_Coordinates FROM shop WHERE shop_Name = ? OR shop_Address = ? OR shop_Page_Payment_Method = ?`;
-    const values = [shop_Name, shop_Address, shop_Coordinates, shop_Page_Payment_Method, req.params.shop_Name, req.params.shop_Address, req.params.shop_Page_Payment_Method];
+    const{shop_Page_Status} = req.body;
+    this.validateShopPageStatus(shop_Page_Status);
+    if(shop_Page_Status === 'Public'){
 
-    mysqlConnection.execute(query, values, (error, result) => {
-        if(error){
-            console.error('Error locating repairshop:', error);
-            return res.status(500).json({error: 'Error locating repairshop'});
+        const query = `SELECT shop_Name, shop_Address, shop_Coordinates FROM shop WHERE shop_Name = ? OR shop_Address = ? OR shop_Page_Payment_Method = ?`;
+        const values = [shop_Name, shop_Address, shop_Coordinates, shop_Page_Payment_Method, req.params.shop_Name, req.params.shop_Address, req.params.shop_Page_Payment_Method];
+
+        mysqlConnection.execute(query, values, (error, result) => {
+            if(error){
+                console.error('Error locating repairshop:', error);
+                return res.status(500).json({error: 'Error locating repairshop'});
+            
+            }
+            res.status(200).json({message : 'Shop found:'});
+            res.status(200).json(result);
         
-        }
-        res.status(200).json({message : 'Shop found:'});
-        res.status(200).json(result);
-        
-    });
+        });
+    }else{
+        res.status(200).json({message: 'Shop is found but is set to Private by Owner/Manager'});
+    }
 };
 
 module.exports.displayShopPage = (req, res) => {
-    //TODO find a way to display Comment (bro... just use JOIN LOL) (Thanks Personality 2 <3)
-    const{shop_Name,shop_Address, shop_AboutUs,shop_Service_Offer, shop_Mobile_No, shop_Landline_No,shop_Picture_Filepath, shop_Page_Payment_Method} = req.body;
-    const query = `SELECT shop_Name, shop_Address, shop_About_Us, shop_Service_Offer, shop_Mobile_No, shop_Picture_Filepath, shop_Page_Payment_Method FROM shops`;
-    const values = [shop_Name, shop_Address, shop_AboutUs, shop_Service_Offer, shop_Mobile_No, shop_Landline_No, shop_Picture_Filepath, shop_Page_Payment_Method];
+    const{shop_id, shop_Name,shop_Address, shop_AboutUs,shop_Service_Offer, shop_Mobile_No, shop_Landline_No,shop_Picture_Filepath, shop_Page_Payment_Method} = req.body;
+    const query = `SELECT shop_Name, shop_Address, shop_About_Us, shop_Service_Offer, shop_Mobile_No, shop_Picture_Filepath, shop_Page_Payment_Method FROM shops where shop_id = ?`;
+    const values = [shop_id, shop_Name, shop_Address, shop_AboutUs, shop_Service_Offer, shop_Mobile_No, shop_Landline_No, shop_Picture_Filepath, shop_Page_Payment_Method, req.params.shop_id];
 
     mysqlConnection.execute(query,values, (error, result) => {
         if(error){
@@ -76,11 +83,11 @@ module.exports.displayShopPage = (req, res) => {
 
 
 module.exports.updateShopPage = (req, res) => {
-    const {shop_Name, shop_Address, shop_Email, shop_Mobile_No, shop_Landline_No, shop_Description} = req.body;
+    const {shop_id, shop_Name, shop_Address, shop_Email, shop_Mobile_No, shop_Landline_No, shop_Description} = req.body;
 
     const query = `UPDATE shop SET shop_Name = ?, shop_Address = ?, shop_Email = ?, shop_Mobile_No = ?, shop_Landline_No = ?, shop_Coordinates = ?, shop_Description = ? WHERE shop_id = ?`;
 
-    const values = [shop_Name, shop_Address, shop_Email, shop_Mobile_No,shop_Landline_No,shop_Description, req.params.id];
+    const values = [shop_id, shop_Name, shop_Address, shop_Email, shop_Mobile_No,shop_Landline_No,shop_Description, req.params.shop_id];
     mysqlCon.query(query, values, (error, result) => {
         if(error){
             console.error('Error updating repairshop:', error);
@@ -93,17 +100,18 @@ module.exports.updateShopPage = (req, res) => {
 
 // Delete
 
-// Under Progress
+// Under Progress (Delete shops along with the user who's role is a manager)
 module.exports.deleteRepairShop = (req, res) => {
+    const { shop_id } = req.body;
     const query = `DELETE FROM shop WHERE shop_id = ?`;
 
-    const values = [req.params.id];
+    const values = [shop_id, req.params.shop_id];
     mysqlConnection.execute(query, values, (error, result) => {
-        if(error){
+        if (error) {
             console.error('Error deleting repairshop:', error);
-            return res.status(500).json({error: 'Error deleting repairshop'});
+            return res.status(500).json({ error: 'Error deleting repairshop' });
         }
-        res.status(200).json({result: result});
-        res.status(200).json({message: 'Repairshop deleted'});
+        res.status(200).json({ result: result });
+        res.status(200).json({ message: 'Repairshop deleted' });
     });
 };
