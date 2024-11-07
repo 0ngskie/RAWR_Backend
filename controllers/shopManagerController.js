@@ -39,7 +39,7 @@ module.exports.getManager = (req, res) => {
 
     const query = `SELECT last_Name FROM user WHERE role = 'Manager' AND shop_id = ?`;
 
-    const values = [last_Name,first_Name,email,role,shop_id];
+    const values = [last_Name,first_Name,email,role,shop_id, req.params.shop_id];
     
     mysqlConnection.execute(query, values, (error, result) => {
         if (error) {
@@ -54,10 +54,10 @@ module.exports.getManager = (req, res) => {
     })
 }
 module.exports.editManagerProfile = (req, res) =>{
-    const {last_Name, first_Name, email, contact_No, password} = req.body;
+    const {last_Name, first_Name, email, contact_No, password, shop_id} = req.body;
     const query = `UPDATE user set last_Name =?, first_Name =?, email =?, password =? WHERE role = 'Manager' AND shop_id =?`;
 
-    const values = [last_Name, first_Name, email, contact_No, password, req.params.id];
+    const values = [last_Name, first_Name, email, contact_No, password, req.params.shop_id];
     
     mysqlConnection.execute(query, values, (error, result) => {
         if (error){
@@ -85,5 +85,6 @@ module.exports.deleteManagerAccount = (req, res) =>{
         }
         res.status(200).json({result: result});
         res.status(200).json({message: 'Manager deleted'});
-    })
-}
+    });
+};
+

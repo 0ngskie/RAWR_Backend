@@ -7,7 +7,7 @@ module.exports.createCustomer = (req, res) =>{
     const checkQuery = `SELECT email FROM users`;
     const checkValues =[email];
 
-    mysqlConnection.execute(checkQuery, checkValues, (checkError, checkResult) => {
+    mysqlConnection.execute(checkQuery, checkValues, (checkError    , checkResult) => {
         if (checkError) {
             console.error('Error checking user:', checkError);
             return res.status(500).json({ error: 'Error checking user' });

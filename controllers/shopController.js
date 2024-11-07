@@ -3,6 +3,7 @@ const User =require('models/users');
 const mysqlConnection = require('mysql/mysqlConnection');
 
 
+
 // Create
 module.exports.registerRepairShop = (req, res) => {
     const {shop_Name, shop_Address, shop_Document_Filepath} = req.body;
@@ -102,16 +103,19 @@ module.exports.updateShopPage = (req, res) => {
 
 // Under Progress (Delete shops along with the user who's role is a manager)
 module.exports.deleteRepairShop = (req, res) => {
-    const { shop_id } = req.body;
+    const {shop_email} = req.body;
+
+    const{shop_id} = req.body;
     const query = `DELETE FROM shop WHERE shop_id = ?`;
 
-    const values = [shop_id, req.params.shop_id];
+    const values = [shop_id,req.params.shop_id];
     mysqlConnection.execute(query, values, (error, result) => {
-        if (error) {
+        if(error){
             console.error('Error deleting repairshop:', error);
-            return res.status(500).json({ error: 'Error deleting repairshop' });
+            return res.status(500).json({error: 'Error deleting repairshop'});
         }
-        res.status(200).json({ result: result });
-        res.status(200).json({ message: 'Repairshop deleted' });
+        res.status(200).json({result: result});
+        res.status(200).json({message: 'Repairshop deleted'});
     });
 };
+
