@@ -13,8 +13,8 @@ module.exports.checkPassword = (req,res) =>{
         } else{
             end
         }
-    })
-}
+    });
+};
 // this module checks if the Email already exists in the Database 
 module.exports.checkEmailExist = (req,res) =>{
     const {email} = req.body;
@@ -32,8 +32,30 @@ module.exports.checkEmailExist = (req,res) =>{
         else{
             end
         }
-    })
-}
+    });
+};
+// this module validates if the email input by the user matches one another
+module.exports.checkEmailMatch = (req,res) => {
+    const{email} = req.body;
+    const checkQuery = `SELECT email FROM users where email = ?`;
+    const checkValues = [email];
+    mysqlConnection.execute(checkQuery, checkValues, (checkError, checkResult) => {
+        if(checkError){
+            console.error('Error checking email match:', checkError);
+            return res.status(500).json({ error: 'Error checking email match' });
+        }
+        if(checkResult){
+            if(email === checkResult.email){
+                // Email match
+                return res.status(200).json({ message: 'Email match' });
+            }else{
+                // Email does not match
+                return res.status(400).json({ error: 'Email does not match' });
+            }
+        }
+    });
+};
+
 // this module validates the Users login in the System ( UI end Login Page)
 module.exports.validateAccountLogin = (req,res) =>{
     const {email, password} = req.body;
@@ -53,8 +75,8 @@ module.exports.validateAccountLogin = (req,res) =>{
             // Incorrect email or password
             return res.status(401).json({ error: 'Incorrect email or password' });
         }
-    })
-}
+    });
+};
 
 // Update User account
 module.exports.editUserAccount = (req, res) =>{
@@ -69,8 +91,8 @@ module.exports.editUserAccount = (req, res) =>{
         }
         res.status(200).json(result);
         res.status(200).json({message: "Customer Account updated"});
-    })
-}
+    });
+};
 
 module.exports.deleteUserAcount = (req,res) =>{
     const query = `DELETE FROM user where user_id =?`;
@@ -83,5 +105,5 @@ module.exports.deleteUserAcount = (req,res) =>{
         }
         res.status (200).json(result);
         res.status(200).json({ message: ' User account has been deleted'});
-    })
-}
+    });
+};
