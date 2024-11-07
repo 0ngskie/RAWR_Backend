@@ -32,5 +32,59 @@ module.exports.createShopOwner = (req,res) =>{
                 res.status(201).json(insertResult);
             })
         }
-    })
-}
+    });
+};
+
+// Read
+
+module.exports.readOwner = (req, res) => {
+    const { shop_id, shop_Name, shop_Address } = req.params; // Use req.params to get the parameters from the URL
+    const checkQuery = `SELECT shop_Page_Status FROM shops WHERE shop_id = ? OR shop_Name = ? OR shop_Address = ?`;
+    const checkValues = [shop_id, shop_Name, shop_Address];
+
+    mysqlConnection.execute(checkQuery, checkValues, (checkError, checkResult) => {
+        if (checkError) {
+            console.error('Error getting shop status:', checkError);
+            return res.status(500).json({ error: 'Error getting shop status from server' });
+        }
+        if (checkResult.length > 0) {
+            res.status(200).json({ message: 'Shop Owner is found', result: checkResult });
+        } else {
+            res.status(404).json({ message: 'Shop Owner not found' });
+        }
+    });
+};
+// Update
+
+
+module.exports.updateOwner = (req, res) => {
+
+    const { shop_id, last_Name, first_Name, email, contact_No } = req.body;
+    const updateQuery = `UPDATE user SET last_Name =?, first_Name =?, email =?, contact_No =? WHERE shop_id =?`;
+    const updateValues = [last_Name, first_Name, email, contact_No, shop_id];
+
+    mysqlConnection.execute(updateQuery, updateValues, (updateError, updateResult) => {
+        if (updateError) {
+            console.error('Error updating shop owner:', updateError);
+            return res.status(500).json({ error: 'Error updating shop owner' });
+        }
+        res.status(200).json(updateResult);
+    });
+};
+
+
+// Delete
+// copy n paste from shop manager - araneta
+module.exports.deleteOwner = (req, res) =>{
+    const query = `DELETE FROM user WHERE role = 'ShopOwner' AND shop_id = ?`;
+
+    const values = [req.params.id];
+    mysqlConnection.execute(query, values, (error, result) => {
+        if(error){
+            console.error ('Error deleting manager:', error);
+            return res.status(500).json({ error: 'Error deleting manager' });
+        }
+        res.status(200).json({result: result});
+        res.status(200).json({message: 'Owner deleted'});
+    });
+};
