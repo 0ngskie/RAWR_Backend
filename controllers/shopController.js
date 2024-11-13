@@ -1,6 +1,7 @@
-const Shop = require('models/shops');
-const User =require('models/users'); 
-const mysqlConnection = require('mysql/mysqlConnection');
+const customerRating = require('models/customerRating')
+const Shop = require('models/shops')
+const customer =require('models/users')
+const mysqlConnection = require('mysql/mysqlConnection')
 
 
 
@@ -23,7 +24,6 @@ module.exports.registerRepairShop = (req, res) => {
 };
 
 // Read
-
 module.exports.validateShopPageStatus = (req,res) => {
     const{shop_id, shop_Page_Status, shop_Name, shop_Address} = req.body;
     const checkQuery =`SELECT shop_Page_Status FROM shops WHERE shop_Name = ? OR shop_Address = ?`;
@@ -66,9 +66,26 @@ module.exports.locateRepairShop = (req,res) => {
 };
 
 module.exports.displayShopPage = (req, res) => {
-    const{shop_id, shop_Name,shop_Address, shop_AboutUs,shop_Service_Offer, shop_Mobile_No, shop_Landline_No,shop_Picture_Filepath, shop_Page_Payment_Method} = req.body;
-    const query = `SELECT shop_Name, shop_Address, shop_About_Us, shop_Service_Offer, shop_Mobile_No, shop_Picture_Filepath, shop_Page_Payment_Method FROM shops where shop_id = ?`;
-    const values = [shop_id, shop_Name, shop_Address, shop_AboutUs, shop_Service_Offer, shop_Mobile_No, shop_Landline_No, shop_Picture_Filepath, shop_Page_Payment_Method, req.params.shop_id];
+    const{shop_id} = req.body;
+    const query = `SELECT 
+            s.shop_Name, 
+            s.shop_Address,
+            s.shop_AboutUs,
+            s.shop_Service_Offer,
+            s.shop_Mobile_No,
+            s.shop_Landline_No,
+            s.Shop_Page_Payment_Method,
+            s.Shop_Page_Status,
+            r.rating_value,
+            r.rating_comment,
+            u.last_Name AS customer_name
+            FROM shops s
+            LEFT JOIN ratings r ON s.shop_id = r.shop_id
+            LEFT JOIN users u ON r.user_id = u.user_id
+            WHERE s.shop_id =?
+            `;
+
+    const values = [shop_id];
 
     mysqlConnection.execute(query,values, (error, result) => {
         if(error){
@@ -100,11 +117,8 @@ module.exports.updateShopPage = (req, res) => {
 };
 
 // Delete
-
-// Under Progress (Delete shops along with the user who's role is a manager)
 module.exports.deleteRepairShop = (req, res) => {
-    const {shop_email} = req.body;
-
+    
     const{shop_id} = req.body;
     const query = `DELETE FROM shop WHERE shop_id = ?`;
 
