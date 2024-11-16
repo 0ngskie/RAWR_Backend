@@ -81,8 +81,8 @@ module.exports.validateAccountLogin = (req,res) =>{
 // Update User account
 module.exports.editUserAccount = (req, res) =>{
     const {last_Name, first_Name, email, contact_No, password} = req.body;
-    const query = `UPDATE user set last_Name = ?, first_Name = ?, email = ?, password = ? WHERE user_id = ?`;
-    const values = [last_Name, first_name, email, contact_No, password, req.params.id];
+    const query = `UPDATE users SET last_Name = ?, first_Name = ?, email = ?, contact_No = ?, password = ? WHERE user_id = ?`;
+    const values = [last_Name, first_Name, email, contact_No, password, req.params.id];
 
     mysqlConnection.execute(query, values, (error, result) => {
         if (error) {
@@ -90,11 +90,10 @@ module.exports.editUserAccount = (req, res) =>{
             return res.status(500).json({ error: 'Error updating customer account' });
         }
         res.status(200).json(result);
-        res.status(200).json({message: "Customer Account updated"});
     });
 };
 
-module.exports.deleteUserAcount = (req,res) =>{
+module.exports.deleteUserAccount = (req,res) =>{
     const query = `DELETE FROM user where user_id =?`;
     const values = [req.params.id];
 
