@@ -1,6 +1,6 @@
 const customerRating = require('models/customerRating')
 const Shop = require('models/shops')
-const customer =require('models/users')
+const user =require('models/users')
 const mysqlConnection = require('mysql/mysqlConnection')
 
 
@@ -9,8 +9,8 @@ const mysqlConnection = require('mysql/mysqlConnection')
 module.exports.registerRepairShop = (req, res) => {
     const {shop_Name, shop_Address, shop_Document_Filepath} = req.body;
 
-    const query = `INSERT INTO repairshop (shop_Name, shop_Address, shop_Document_FilePath) 
-                   VALUES (?,?,?)`;
+    const query = `INSERT INTO repairshop (shop_Name, shop_Address, shop_Document_FilePath, shop_Registration_Status) 
+                   VALUES (?,?,?,Pending)`;
                    
     const values = [shop_Name, shop_Address, shop_Document_Filepath];
     mysqlConnection.execute(query, values, (error, result) => {
@@ -24,6 +24,51 @@ module.exports.registerRepairShop = (req, res) => {
 };
 
 // Read
+module.exports.viewRepairShopDetails = (req, res) => {
+    const {shop_id} = req.body;
+
+    const query = `SELECT 
+                    s.shop_Name
+                    u.last_Name AS owner_firstName,
+                    u.first_Name AS owner_lastName,
+                    s.shop_Address,
+                    s.current_At,
+                    s.shop_Document_FilePath
+                    s,shop_Registration_Status,
+                    FROM shops s
+                    LEFT JOIN users u ON s.shop_id = u.shop_id
+                    WHERE
+                    s.shop_id =?`;
+
+
+    const values = [shop_id];
+
+    mysqlConnection.execute(query, values, (error, result) =>{
+        if(error){
+            console.error('Error getting repairshop details:', error);
+            return res.status(500).json({error: 'Error getting repairshop details from server'});
+        }
+        res.status(200).json({message: "Repairshop details retrieve from server ", result: result});
+    });
+};
+
+module.exports.viewShopRegistrationStatus = (req, res) => {
+    const {shop_id, shop_Registration_Status} = req.body;
+
+    const Query = `SELECT shop_Registration_Status FROM shop = ?`;
+
+
+    const values = [shop_id, shop_Registration_Status];
+
+    mysqlConnection.execute(Query, values, (error, result) => {
+        if(error){
+            console.error('Error getting shop registration status:', error);
+            return res.status(500).json({error: 'Error getting shop registration status from server'});
+        }
+        res.status(200).json({message: "Repairshop registration status retrieve from server ", result: result});
+    });
+};
+
 module.exports.validateShopPageStatus = (req,res) => {
     const{shop_id, shop_Page_Status, shop_Name, shop_Address} = req.body;
     const checkQuery =`SELECT shop_Page_Status FROM shops WHERE shop_Name = ? OR shop_Address = ?`;
@@ -98,12 +143,38 @@ module.exports.displayShopPage = (req, res) => {
 };
 
 // Update
+module.exports.updateShopRegistrationStatus = (req,res) =>{
+    const{shop_id, shop_Registration_Status, updated_At} =req.body;
 
+    const query =` UPDATE shops SET shop_Registration_Status =?, updated_At = CURRENT_TIMESTAMP where shop_id = ?`;
 
+    const values = [shop_id, shop_Registration_Status, updated_At];
+    mysqlConnection.execute(query, values, (error, result) => {
+        if(error){
+            console.error('Error updating repairshop registration status:', error);
+            return res.status(500).json({error: 'Error updating repairshop registration status'});
+        }
+        res.status(200).json({message: 'Repairshop registration status updated', result: result});
+    });
+};
+
+module.exports.updateShopRegistrationDetails = (req, res) =>{
+    const{shop_id, shop_Name,shop_Address, shop_Document_Filepath} = req.body;
+
+    const query = `UPDATE shops SET shop_Name =?, shop_Address =?, shop_Document_Filepath =? WHERE shop_id =?`;
+    const values = [shop_Name, shop_Address, shop_Document_Filepath, req.params.shop_id];
+    mysqlConnection.execute(query, values, (error, result) => {
+        if(error){
+            console.error('Error updating repairshop registration details:', error);
+            return res.status(500).json({error: 'Error updating repairshop registration details'});
+        }
+        res.status(200).json({message: 'Repairshop registration details updated', result: result});
+    });
+};
 module.exports.updateShopPage = (req, res) => {
     const {shop_id, shop_Name, shop_Address, shop_Email, shop_Mobile_No, shop_Landline_No, shop_Description} = req.body;
 
-    const query = `UPDATE shop SET shop_Name = ?, shop_Address = ?, shop_Email = ?, shop_Mobile_No = ?, shop_Landline_No = ?, shop_Coordinates = ?, shop_Description = ? WHERE shop_id = ?`;
+    const query = `UPDATE shops SET shop_Name = ?, shop_Address = ?, shop_Email = ?, shop_Mobile_No = ?, shop_Landline_No = ?, shop_Coordinates = ?, shop_Description = ? WHERE shop_id = ?`;
 
     const values = [shop_id, shop_Name, shop_Address, shop_Email, shop_Mobile_No,shop_Landline_No,shop_Description, req.params.shop_id];
     mysqlCon.query(query, values, (error, result) => {
