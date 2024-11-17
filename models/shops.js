@@ -5,7 +5,8 @@ class Shop{
                 shop_Service_Offer,shop_Mobile_No,
                 shop_Landline_No, shop_Document_Filepath,
                 shop_Profile_Filepath, shop_Page_Payment_Method, 
-                shop_Page_Status, shop_Registration_Status)
+                shop_Page_Status, shop_Registration_Status,
+                created_At, updated_At)
                 {
                     this.shop_id = shop_id;
                     this.shopName = shopName;
@@ -21,6 +22,8 @@ class Shop{
                     this.shop_Page_Payment_Method = shop_Page_Payment_Method;
                     this.shop_Page_Status = shop_Page_Status;
                     this.shop_Registration_Status = shop_Registration_Status;
+                    this.created_At = created_At;
+                    this.updated_At = updated_At;
                 }
 }
 module.exports = Shop
