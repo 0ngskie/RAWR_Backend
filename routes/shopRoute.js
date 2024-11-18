@@ -7,7 +7,7 @@ router.get('/validate', shopController.validateShopPageStatus);
 router.get('/locate', shopController.locateRepairShop);
 router.get('/display', shopController.displayShopPage);
 router.put('/update', shopController.updateShopPage);
-router.put('/updateRegister', shopControler.updateShopRegistration);
+router.put('/updateRegisStatus', shopControler.updateShopRegistrationStatus);
 router.delete('/delete', shopController.deleteRepairShop);
 
 module.exports = router;

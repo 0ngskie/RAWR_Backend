@@ -25,11 +25,15 @@ module.exports.createCustomerRating = (req,res) =>{
 // Read
 module.exports.displayCustomerRating = (req,res)=>{
     const{customerRating_id, rating, ratingDescription} = req.body;
-    // const query = `SELECT cr * FROM customerRating cr JOIN shops s ON cr. `
-    const query = `SELECT r.rating_value, r.rating_Comment
-                    u.name AS user_name FROM ratings r
-                    JOIN users u ON r.user_id = u.user_id
-                    WHERE r.shop_id =?`;
+    const query = `
+        SELECT s.shop_AboutUs AS shop_description, 
+               r.rating_value, 
+               r.rating_comment, 
+               u.name AS user_name
+        FROM ratings r
+        JOIN users u ON r.user_id = u.user_id
+        JOIN shops s ON r.shop_id = s.shop_id
+        WHERE r.shop_id = ?`;
 
     const values = [req.params.shop_id];
     mysqlConnection.execute(query,values, (error, result) => {
