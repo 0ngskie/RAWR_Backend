@@ -1,4 +1,4 @@
-const User = require("../models/users")
+const User = require("../model/users")
 const mysqlCon = require('../mysql/mysqlConnection')
 
 module.exports.createShopManager = (req, res) =>{

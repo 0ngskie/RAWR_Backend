@@ -1,7 +1,7 @@
-const customerRating = require('models/customerRating')
-const Shop = require('models/shops')
-const user =require('models/users')
-const mysqlConnection = require('mysql/mysqlConnection')
+const customerRating = require('../model/customerRating')
+const Shop = require('../model/shops')
+const user =require('../model/users')
+const mysqlConnection = require('../mysql/mysqlConnection')
 
 
 

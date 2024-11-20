@@ -1,5 +1,5 @@
-const customerRating = require('../models/customerRating')
-const customer = require('../models/users')
+const customerRating = require('../model/customerRating')
+const customer = require('../model/users')
 const mysqlConnection = require('../mysql/mysqlConnection')
 
 // Create

@@ -1,4 +1,4 @@
-const User = require("../models/users");
+const User = require("../model/users");
 const mysqlConnection = require('../mysql/mysqlConnection');
 
 // module that would create the Customers account
