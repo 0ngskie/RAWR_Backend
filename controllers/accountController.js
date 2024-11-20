@@ -1,4 +1,4 @@
-const User = require("../models/users")
+const User = require("../model/users")
 const mysqlConnection = require('../mysql/mysqlConnection')
 
 // this module checks the Users password  (Under review whether to keep or disregard)
