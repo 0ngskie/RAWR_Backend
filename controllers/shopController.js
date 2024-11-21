@@ -1,4 +1,5 @@
 const customerRating = require('../model/customerRating')
+const customerRatingController = require('../controllers/customerRatingController')
 const Shop = require('../model/shops')
 const user =require('../model/users')
 const mysqlConnection = require('../mysql/mysqlConnection')
@@ -128,13 +129,42 @@ module.exports.displayShopPage = (req, res) => {
             `; //Removed Customer Ratings, Rating and User joins. Use displayShopCustomerRating from the customerRatingController
 
     const values = [shop_id];
-
+    
     mysqlConnection.query(query,values, (error, result) => {
         if(error){
             console.error('Error getting repairshops:', error);
             return res.status(500).json({error: 'Error getting shop details from server'});
         }
+        customerRatingController.getUserAverageRating(shop_id)
         res.status(200).json({message: 'Shop Page is found and dispatched successfully', result: result});
+    });
+};
+
+module.exports.getShopAverageRating = (req, res) => {
+    const { shop_id } = req.params;  // Get user_id from the request body
+
+    // Query to calculate the average rating for the given user_id
+    const query = `SELECT AVG(rating_value) AS average_rating FROM ratings WHERE shop_id = ? AND rating_value BETWEEN 1 AND 5`;
+
+    const values =[shop_id];
+
+    mysqlConnection.query(query, values, (error, results) => {
+        if (error) {
+            console.error('Error calculating average rating:', error);
+            return res.status(500).json({ message: 'Error calculating average rating' });
+        }
+
+        if (results.length === 0) {
+            return res.status(404).json({ message: 'No ratings found for this user' });
+        }
+
+        const averageRating = results[0].average_rating;
+
+        // Return the average rating in the response
+        return res.status(200).json({
+            message: 'Average rating calculated successfully',
+            average_rating: averageRating
+        });
     });
 };
 
