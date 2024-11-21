@@ -4,39 +4,44 @@ const mysqlConnection = require('../mysql/mysqlConnection')
 
 // Create
 
-module.exports.createCustomerRating = (req,res) =>{
-    const{ user_id, shop_id, rating_value, rating_comment} = req.body;
+module.exports.createCustomerRating = (user_id, shop_id, rating_value, rating_comment, req,res) =>{
     const query =`INSERT INTO ratings 
                 (user_id, shop_id, rating_value, rating_comment)
                 VALUES (?, ?, ?, ?)`;
     const values = [user_id, shop_id, rating_value, rating_comment];
-
-    mysqlConnection.execute(query, values, (error, result) => {
+    
+    mysqlConnection.query(query, values, (error, result) => {
         if(error){
             console.error('Error executing query', error);
             res.status(500).send({message: 'Error creating customer rating'});
         } else{
             console.log('Customer rating created successfully');
-            res.status(200).json({message: 'Customer rating created successfully', result: result });
+            res.status(201).json({message: 'Customer rating created successfully',...req.body, id:  result.insertId });
         }
     });
 };
 
 // Read
-module.exports.displayCustomerRating = (req,res)=>{
-    const{customerRating_id, rating, ratingDescription} = req.body;
-    const query = `
-        SELECT s.shop_AboutUs AS shop_description, 
-               r.rating_value, 
-               r.rating_comment, 
-               u.name AS user_name
-        FROM ratings r
-        JOIN users u ON r.user_id = u.user_id
-        JOIN shops s ON r.shop_id = s.shop_id
-        WHERE r.shop_id = ?`;
+module.exports.displayAllComments = (req,res)=>{
+    const query = `SELECT * FROM ratings`;
+    mysqlConnection.query(query, (error, result) => {
+        if(error){
+            console.error('Error executing query', error);
+            res.status(500).send({message: 'Error fetching all customer ratings'});
+        } else{
+            res.status(200).json({message: 'Succesfull Display of Customer Ratings',result: result});
+        }
+    });
+};
 
-    const values = [req.params.shop_id];
-    mysqlConnection.execute(query,values, (error, result) => {
+module.exports.displayShopCustomerRating = (req,res)=>{
+
+    const shop_id = req.params.shop_id;
+    console.log('Received request for shop_id:', req.params.shop_id);
+    const query = `SELECT r.rating_value, r.rating_comment, u.last_Name, r.shop_id FROM ratings r JOIN users u ON r.user_id = u.user_id WHERE r.shop_id = ?;`;
+
+    const values = [shop_id];
+    mysqlConnection.query(query,values, (error, result) => {
         if(error){
             console.error('Error executing query', error);
             res.status(500).send({message: 'Error fetching customer Ratings'});
