@@ -9,8 +9,11 @@ router.post('/create', customerRatingController.createCustomerRating);
 router.get('/', customerRatingController.displayAllComments);
 router.get('/get/:shop_id', customerRatingController.displayShopCustomerRating);
 
+// Under maintenance
+router.get('/get/average/:user_id', customerRatingController.getUserAverageRating);
+
 //update
-router.put('/update/:shop_id', customerRatingController.updateCustomerRating);
+router.put('/update/:id', customerRatingController.updateCustomerStatus);
 
 //delete
 router.delete('/delete/:id', customerRatingController.deleteCustomerRating);

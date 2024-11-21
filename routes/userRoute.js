@@ -14,5 +14,8 @@ router.delete('/deleteUserAccount/:id', accountController.deleteUserAccount);
 // Customer Controller Routes
 router.post('/createCustomer', customerController.createCustomer);
 router.get('/displayAllCustomerAccounts', customerController.displayAllCustomerAccount);
+router.put('/updateCustomerAccount/:user_id', customerController.updateCustomerAccount);
+router.delete('/deleteCustomerAccount/:id', customerController.deleteCustomerAccount);
+
 
 module.exports = router;
