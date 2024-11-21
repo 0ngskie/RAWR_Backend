@@ -3,8 +3,8 @@ const router = express.Router();
 const shopManagerController = require('../controllers/shopManagerController');
 
 router.post('/create', shopManagerController.createShopManager);
-router.get('/get', shopManagerController.getManager);
-router.put('/edit', shopManagerController.editManagerProfile);
-router.delete('/delete', shopManagerController.deleteManagerAccount);
+router.get('/read', shopManagerController.readManager);
+router.put('/update', shopManagerController.updateManager);
+router.delete('/delete', shopManagerController.deleteManager);
 
 module.exports = router;

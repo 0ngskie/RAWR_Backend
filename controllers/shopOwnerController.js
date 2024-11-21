@@ -3,49 +3,50 @@ const mysqlConnection = require('../mysql/mysqlConnection')
 
 
 // Create
-
-// module that would create the Shop Owners account
-module.exports.createShopOwner = (req,res) =>{
-    const{ last_Name, first_Name, email, password, contact_No, role} = req.body;
-    const checkQuery =`SELECT email FROM users WHERE email =?`;
+module.exports.createShopOwner = (req, res) => {
+    const { last_Name, first_Name, email, password, contact_No } = req.body;
+    const checkQuery = `SELECT email FROM users WHERE email = ?`;
     const checkValues = [email];
 
-    mysqlConnection.execute(checkQuery,checkValues, (checkError,checkResult) =>{
-        if(checkError){
+    mysqlConnection.query(checkQuery, checkValues, (checkError, checkResult) => {
+        if (checkError) {
             console.error('Error checking user:', checkError);
             return res.status(500).json({ error: 'Error checking user' });
         }
-        if(checkResult.length > 0){
-            // checks if the email exists (check the module found in line 20)
-            this.checkEmailExist
-        } 
-        else{ // add the Shop Owner account details to the Database
-            const insertQuery = `INSERT INTO user (last_Name, first_Name, email, password, contact_No, role)
-                                values (?,?,?,?,?, Shop Owner)`;
-            const insertValues = [last_Name, first_Name, email, password, contact_No, role];
+
+        if (checkResult.length > 0) {
+            // Removed function call to accountController.checkEmailExists as it seems redundant
+            return res.status(400).json({ message: 'Email already exists' }); 
+        } else {
             
-            mysqlConnection.execute(insertQuery, insertValues, (insertError, insertResult) =>{
-                if(insertError){
+            const insertQuery = `
+                INSERT INTO users (last_Name, first_Name, email, password, contact_No, role)
+                VALUES (?, ?, ?, ?, ?, 'Shop Owner')`;
+
+            const insertValues = [last_Name, first_Name, email, password, contact_No]; //Adjustments to query and values
+
+            mysqlConnection.query(insertQuery, insertValues, (insertError, insertResult) => {
+                if (insertError) {
                     console.error('Error creating shop owner:', insertError);
-                    return res.status(500).json({ error: 'Error creating shop owner Account' });
+                    return res.status(500).json({ error: 'Error creating shop owner account' });
                 }
-                res.status(201).json(insertResult);
-            })
+                res.status(201).json({ message: 'Shop owner account created successfully', result: insertResult });
+            });
         }
     });
 };
 
+
 // Read
-
 module.exports.readOwner = (req, res) => {
-    const { shop_id, shop_Name, shop_Address } = req.params; // Use req.params to get the parameters from the URL
-    const checkQuery = `SELECT shop_Page_Status FROM shops WHERE shop_id = ? OR shop_Name = ? OR shop_Address = ?`;
-    const checkValues = [shop_id, shop_Name, shop_Address];
+    const {user_id} = req.body;
+    const checkQuery = `SELECT * FROM users WHERE user_id = ? AND role = "Shop Owner"`; //Changed Query to only require user_id and must be a 'Shop Owner'
+    const checkValues = [user_id];
 
-    mysqlConnection.execute(checkQuery, checkValues, (checkError, checkResult) => {
+    mysqlConnection.query(checkQuery, checkValues, (checkError, checkResult) => {
         if (checkError) {
-            console.error('Error getting shop status:', checkError);
-            return res.status(500).json({ error: 'Error getting shop status from server' });
+            console.error('Error getting Shop Owner:', checkError);
+            return res.status(500).json({ error: 'Error getting shop owner from server' });
         }
         if (checkResult.length > 0) {
             res.status(200).json({ message: 'Shop Owner is found', result: checkResult });
@@ -54,16 +55,15 @@ module.exports.readOwner = (req, res) => {
         }
     });
 };
+
 // Update
-
-
 module.exports.updateOwner = (req, res) => {
 
-    const { shop_id, last_Name, first_Name, email, contact_No } = req.body;
-    const updateQuery = `UPDATE user SET last_Name =?, first_Name =?, email =?, contact_No =? WHERE shop_id =?`;
-    const updateValues = [last_Name, first_Name, email, contact_No, shop_id];
+    const {user_id, last_Name, first_Name, email, contact_No } = req.body;
+    const updateQuery = `UPDATE users SET last_Name = ?, first_Name = ?, email = ?, contact_No = ? WHERE user_id = ?`;
+    const updateValues = [last_Name, first_Name, email, contact_No, user_id];
 
-    mysqlConnection.execute(updateQuery, updateValues, (updateError, updateResult) => {
+    mysqlConnection.query(updateQuery, updateValues, (updateError, updateResult) => {
         if (updateError) {
             console.error('Error updating shop owner:', updateError);
             return res.status(500).json({ error: 'Error updating shop owner' });
@@ -72,17 +72,18 @@ module.exports.updateOwner = (req, res) => {
     });
 };
 
-
 // Delete
 // copy n paste from shop manager - araneta
 module.exports.deleteOwner = (req, res) =>{
-    const query = `DELETE FROM user WHERE role = 'ShopOwner' AND shop_id = ?`;
 
-    const values = [req.params.id];
-    mysqlConnection.execute(query, values, (error, result) => {
+    const {user_id} = req.body;
+    const query = `DELETE FROM users WHERE role = "Shop Owner" AND user_id = ?`;
+    const values = [user_id]; // How should we handle the foreign key constraints?
+    
+    mysqlConnection.query(query, values, (error, result) => {
         if(error){
-            console.error ('Error deleting manager:', error);
-            return res.status(500).json({ error: 'Error deleting manager' });
+            console.error ('Error deleting Owner:', error);
+            return res.status(500).json({ error: 'Error deleting Owner' });
         }
         res.status(200).json({result: result});
         res.status(200).json({message: 'Owner deleted'});

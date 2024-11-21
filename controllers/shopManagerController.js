@@ -1,28 +1,31 @@
 const User = require("../model/users")
-const mysqlCon = require('../mysql/mysqlConnection')
+const mysqlConnection = require('../mysql/mysqlConnection')
 
 module.exports.createShopManager = (req, res) =>{
-    const {last_Name, first_Name, email, password, contact_No, role, shop_id} = req.body;
-    const checkQuery = `SELECT email FROM users WHERE email =?`;
+    const { last_Name, first_Name, email, password, contact_No } = req.body;
+    const checkQuery = `SELECT email FROM users WHERE email = ?`;
     const checkValues = [email];
 
-    mysqlCon.query(checkQuery, checkValues, (checkError, checkResult) =>{
-        if(checkError){
+    mysqlConnection.query(checkQuery, checkValues, (checkError, checkResult) => {
+        if (checkError) {
             console.error('Error checking user:', checkError);
             return res.status(500).json({ error: 'Error checking user' });
         }
-        if(checkResult.length > 0){
-            // checks if the email exists (check the module found in line 20)
-            this.checkEmailExist
-        }else{
-            /* insert here the module where it would check for the Shop if its in the database
-             * Once the shop is found it will then proceed to insert the details provided in the database
-             */
-            const insertQuery = `INSERT INTO user (last_Name, first_Name, email, password, contact_No, role, shop_id) 
-                                VALUES (?,?,?,?,?,Manager,?)`;
-            const insertValues = [last_Name, first_Name, email, password, contact_No, role, shop_id];
+
+        if (checkResult.length > 0) {
+            // Removed function call to accountController.checkEmailExists as it seems redundant
+            return res.status(400).json({ message: 'Email already exists' }); 
+        } else {
+            // Insert here the module that would check the account (e.g. Shop Owner) that is registering this account.
+            // As well as which shop the account will be assigned to.
+
+            const insertQuery = `
+                INSERT INTO users (last_Name, first_Name, email, password, contact_No, role)
+                VALUES (?, ?, ?, ?, ?, 'Manager')`;
+
+            const insertValues = [last_Name, first_Name, email, password, contact_No];
             
-            mysqlConnection.execute(insertQuery,insertValues,(insertError,insertResult) =>{
+            mysqlConnection.query(insertQuery,insertValues,(insertError,insertResult) =>{
                 if(insertError){
                     console.error('Error creating shop manager:', insertError);
                     return res.status(500).json({ error: 'Error creating shop manager Account' });
@@ -34,57 +37,55 @@ module.exports.createShopManager = (req, res) =>{
 }
 
 // Get the details of the Shop Manager
-module.exports.getManager = (req, res) => {
-    const{ last_Name, first_Name, email, role, shop_id} = req.body;
+module.exports.readManager = (req, res) => {
+    const {user_id} = req.body; 
+    const checkQuery = `SELECT * FROM users WHERE user_id = ? AND role = "Manager"`;
+    const checkValues = [user_id];
 
-    const query = `SELECT last_Name FROM user WHERE role = 'Manager' AND shop_id = ?`;
+    mysqlConnection.query(checkQuery, checkValues, (checkError, checkResult) => {
+        if (checkError) {
+            console.error('Error getting Shop Manager:', checkError);
+            return res.status(500).json({ error: 'Error getting shop Manager from server' });
+        }
+        if (checkResult.length > 0) {
+            res.status(200).json({ message: 'Shop Manager is found', result: checkResult });
+        } else {
+            res.status(404).json({ message: 'Shop Manager not found' });
+        }
+    });
+};
 
-    const values = [last_Name,first_Name,email,role,shop_id, req.params.shop_id];
+module.exports.updateManager = (req, res) =>{ 
+
+    // I'm not sure If this needs "AND role = 'Manager'". Same goes with the updateOwner
+    // Might want to put this into the accountController instead.
+
+    const {user_id, last_Name, first_Name, email, contact_No } = req.body;
+    const updateQuery = `UPDATE users SET last_Name = ?, first_Name = ?, email = ?, contact_No = ? WHERE user_id = ?`;
+    const updateValues = [last_Name, first_Name, email, contact_No, user_id];
+
+    mysqlConnection.query(updateQuery, updateValues, (updateError, updateResult) => {
+        if (updateError) {
+            console.error('Error updating shop manager:', updateError);
+            return res.status(500).json({ error: 'Error updating shop manager' });
+        }
+        res.status(200).json(updateResult);
+    });
+};
+
+// This is also in the same predicament as Update
+module.exports.deleteManager = (req, res) =>{
+
+    const {user_id} = req.body;
+    const query = `DELETE FROM users WHERE role = "Manager" AND user_id = ?`;
+    const values = [user_id];
     
-    mysqlConnection.execute(query, values, (error, result) => {
-        if (error) {
-            console.error('Error fetching managers:', error);
-            return res.status(500).json({ error: 'Error fetching managers' });
-        }
-        if(result.length > 0){
-            res.status(200).json(result);
-        }else{
-            res.status(404).json({error: 'Manager not found'});
-        }
-    })
-}
-module.exports.editManagerProfile = (req, res) =>{
-    const {last_Name, first_Name, email, contact_No, password, shop_id} = req.body;
-    const query = `UPDATE user set last_Name =?, first_Name =?, email =?, password =? WHERE role = 'Manager' AND shop_id =?`;
-
-    const values = [last_Name, first_Name, email, contact_No, password, req.params.shop_id];
-    
-    mysqlConnection.execute(query, values, (error, result) => {
-        if (error){
-            console.error('Error updating manager description:', error);
-            return res.status(500).json({ error: 'Error updating manager profile' });
-        }
-        if(result.length > 0){
-            res.status(200).json(result);
-            res.status(200).json({message: "Manager profile updated"});
-        }
-        else{
-            res.status(404).json({error: 'Manager not found'});
-        }
-    })
-}
-
-module.exports.deleteManagerAccount = (req, res) =>{
-    const query = `DELETE FROM user WHERE role = 'Manager' AND shop_id = ?`;
-
-    const values = [req.params.id];
-    mysqlConnection.execute(query, values, (error, result) => {
+    mysqlConnection.query(query, values, (error, result) => {
         if(error){
-            console.error ('Error deleting manager:', error);
-            return res.status(500).json({ error: 'Error deleting manager' });
+            console.error ('Error deleting Manager:', error);
+            return res.status(500).json({ error: 'Error deleting Manager' });
         }
-        res.status(200).json({result: result});
-        res.status(200).json({message: 'Manager deleted'});
+        res.status(200).json({message: 'Manager deleted', result: result});
     });
 };
 
