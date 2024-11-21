@@ -3,47 +3,44 @@ const Shop = require('../model/shops')
 const user =require('../model/users')
 const mysqlConnection = require('../mysql/mysqlConnection')
 
-
-
 // Create
 module.exports.registerRepairShop = (req, res) => {
     const {shop_Name, shop_Address, shop_Document_Filepath} = req.body;
 
-    const query = `INSERT INTO repairshop (shop_Name, shop_Address, shop_Document_FilePath, shop_Registration_Status) 
-                   VALUES (?,?,?,Pending)`;
-                   
+    //Replaced "shops" to match database table name
+    const query = `INSERT INTO shops (shop_Name, shop_Address, shop_Document_FilePath, shop_Registration_Status) 
+                   VALUES (?,?,?,"Pending")`; //Added quotations to "Pending"
+
     const values = [shop_Name, shop_Address, shop_Document_Filepath];
-    mysqlConnection.execute(query, values, (error, result) => {
+    mysqlConnection.query(query, values, (error, result) => {
         if(error){
             console.error('Error creating repairshop:', error);
             return res.status(500).json({error: 'Error registering repairshop'});
         }
-        res.status(200).json({result: result});
-        res.status(200).json({message: 'Repairshop is under review'});
+        res.status(200).json({result: result, message: 'Repairshop is under review'}); //Combined the two responses to avoid this error: code: 'ERR_HTTP_HEADERS_SENT' 
     });
 };
 
 // Read
-module.exports.viewRepairShopDetails = (req, res) => {
+module.exports.viewRepairShopDetails = (req, res) => { //For Admin
     const {shop_id} = req.body;
-
+    
     const query = `SELECT 
-                    s.shop_Name
-                    u.last_Name AS owner_firstName,
-                    u.first_Name AS owner_lastName,
+                    s.shop_Name,
+                    u.last_Name AS owner_lastName,
+                    u.first_Name AS owner_firstName,
                     s.shop_Address,
-                    s.current_At,
-                    s.shop_Document_FilePath
-                    s,shop_Registration_Status,
+                    s.created_at,
+                    s.shop_Document_FilePath,
+                    s.shop_Registration_Status
                     FROM shops s
                     LEFT JOIN users u ON s.shop_id = u.shop_id
                     WHERE
-                    s.shop_id =?`;
-
+                    s.shop_id =?`; //Fixed query: "created_at"
 
     const values = [shop_id];
 
-    mysqlConnection.execute(query, values, (error, result) =>{
+    mysqlConnection.query(query, values, (error, result) =>{
         if(error){
             console.error('Error getting repairshop details:', error);
             return res.status(500).json({error: 'Error getting repairshop details from server'});
@@ -52,15 +49,15 @@ module.exports.viewRepairShopDetails = (req, res) => {
     });
 };
 
-module.exports.viewShopRegistrationStatus = (req, res) => {
-    const {shop_id, shop_Registration_Status} = req.body;
+module.exports.viewShopRegistrationStatus = (req, res) => { //Mostly for Testing purposes
+    const {shop_id} = req.body; //Removed shop_Registration_Status from the request body
 
     const Query = `SELECT shop_Registration_Status FROM shop = ?`;
 
 
     const values = [shop_id, shop_Registration_Status];
 
-    mysqlConnection.execute(Query, values, (error, result) => {
+    mysqlConnection.query(Query, values, (error, result) => {
         if(error){
             console.error('Error getting shop registration status:', error);
             return res.status(500).json({error: 'Error getting shop registration status from server'});
@@ -69,45 +66,50 @@ module.exports.viewShopRegistrationStatus = (req, res) => {
     });
 };
 
-module.exports.validateShopPageStatus = (req,res) => {
-    const{shop_id, shop_Page_Status, shop_Name, shop_Address} = req.body;
-    const checkQuery =`SELECT shop_Page_Status FROM shops WHERE shop_Name = ? OR shop_Address = ?`;
-    const checkValues = [shop_id, req.shop_id, shop_Page_Status, shop_Name, req.params.shop_Name, shop_Address, req.params.shop_Address];
+module.exports.validateShopPageStatus = (req,res) => { //Changed WHERE clause to only use "shop_id"
+    const{shop_id} = req.body;
+    const checkQuery =`SELECT shop_id, shop_Page_Status FROM shops WHERE shop_id = ?`;
+    const checkValues = [shop_id];
 
-    mysqlConnection.execute(checkQuery, checkValues, (checkError,checkResult) =>{
+    mysqlConnection.query(checkQuery, checkValues, (checkError,checkResult) =>{
         if(checkError){
             console.error('Error getting shop status:', error);
             return res.status(500).json({error: 'Error getting shop status from server'});
         }
         if(checkResult.length > 0){
-            res.status(200).json({message: 'Shop Page status is found and dispatched successfully'});
-            res.status(200).json({result: checkResult});
+            res.status(200).json({result: checkResult, message: 'Shop Page status is found and dispatched successfully'}); //Combined the two responses to avoid this error: code: 'ERR_HTTP_HEADERS_SENT' 
         }
-    });
+    }); //Note: Make sure to not leave any shop status's as null. Default them as 'Private'
 };
 
-module.exports.locateRepairShop = (req,res) => {
+module.exports.locateRepairShop = (req,res) => { //Changed locateRepairShop to use the shop_Page_Status in the WHERE clause instead of using the validateShopPageStatus
     const{shop_Name, shop_Address,shop_Coordinates,shop_Page_Payment_Method} = req.body;
-    const{shop_Page_Status} = req.body;
-    this.validateShopPageStatus(shop_Page_Status);
-    if(shop_Page_Status === 'Public'){
 
-        const query = `SELECT shop_Name, shop_Address, shop_Coordinates FROM shop WHERE shop_Name = ? OR shop_Address = ? OR shop_Page_Payment_Method = ?`;
-        const values = [shop_Name, shop_Address, shop_Coordinates, shop_Page_Payment_Method, req.params.shop_Name, req.params.shop_Address, req.params.shop_Page_Payment_Method];
+    const query = `
+    SELECT shop_id, shop_Name, shop_Address, shop_Coordinates, shop_Page_Status 
+    FROM shops 
+    WHERE shop_Page_Status = "Public" 
+    AND (
+        shop_Name = ? 
+        OR shop_Address = ? 
+        OR shop_Coordinates = ? 
+        OR shop_Page_Payment_Method = ? 
+    )`; //Updated the query
+    const values = [shop_Name, shop_Address, shop_Coordinates, shop_Page_Payment_Method];
 
-        mysqlConnection.execute(query, values, (error, result) => {
-            if(error){
-                console.error('Error locating repairshop:', error);
-                return res.status(500).json({error: 'Error locating repairshop'});
+    mysqlConnection.query(query, values, (error, result) => {
+        if(error){
+            console.error('Error locating repairshop:', error);
+            return res.status(500).json({error: 'Error locating repairshop'});
             
-            }
-            res.status(200).json({message : 'Shop found:'});
-            res.status(200).json(result);
+        }
+        if (result.length > 0) {
+            return res.status(200).json({ message: 'Shop found:', result }); //Combined the two responses to avoid this error: code: 'ERR_HTTP_HEADERS_SENT' 
+        } else {
+            return res.status(404).json({ message: 'No shops found matching the criteria.' }); //Added a response for when no public shops are found with the request
+        }
         
-        });
-    }else{
-        res.status(200).json({message: 'Shop is found but is set to Private by Owner/Manager'});
-    }
+    });
 };
 
 module.exports.displayShopPage = (req, res) => {
@@ -120,36 +122,30 @@ module.exports.displayShopPage = (req, res) => {
             s.shop_Mobile_No,
             s.shop_Landline_No,
             s.Shop_Page_Payment_Method,
-            s.Shop_Page_Status,
-            r.rating_value,
-            r.rating_comment,
-            u.last_Name AS customer_name
+            s.Shop_Page_Status
             FROM shops s
-            LEFT JOIN ratings r ON s.shop_id = r.shop_id
-            LEFT JOIN users u ON r.user_id = u.user_id
             WHERE s.shop_id =?
-            `;
+            `; //Removed Customer Ratings, Rating and User joins. Use displayShopCustomerRating from the customerRatingController
 
     const values = [shop_id];
 
-    mysqlConnection.execute(query,values, (error, result) => {
+    mysqlConnection.query(query,values, (error, result) => {
         if(error){
             console.error('Error getting repairshops:', error);
             return res.status(500).json({error: 'Error getting shop details from server'});
         }
-        res.status(200).json({message: 'Shop Page is found and dispatched successfully'});
-        res.status(200).json({result: result});
+        res.status(200).json({message: 'Shop Page is found and dispatched successfully', result: result});
     });
 };
 
 // Update
 module.exports.updateShopRegistrationStatus = (req,res) =>{
-    const{shop_id, shop_Registration_Status, updated_At} =req.body;
+    const{shop_id, shop_Registration_Status} = req.body;
 
-    const query =` UPDATE shops SET shop_Registration_Status =?, updated_At = CURRENT_TIMESTAMP where shop_id = ?`;
+    const query =` UPDATE shops SET shop_Registration_Status = ?, updated_At = CURRENT_TIMESTAMP where shop_id = ?`;
 
-    const values = [shop_id, shop_Registration_Status, updated_At];
-    mysqlConnection.execute(query, values, (error, result) => {
+    const values = [shop_Registration_Status, shop_id]; //Removed updated_At and swapped the places of the variables
+    mysqlConnection.query(query, values, (error, result) => {
         if(error){
             console.error('Error updating repairshop registration status:', error);
             return res.status(500).json({error: 'Error updating repairshop registration status'});
@@ -158,12 +154,14 @@ module.exports.updateShopRegistrationStatus = (req,res) =>{
     });
 };
 
-module.exports.updateShopRegistrationDetails = (req, res) =>{
+module.exports.updateShopRegistrationDetails = (req, res) =>{ //If Rejected, use this when reapplying a shop
     const{shop_id, shop_Name,shop_Address, shop_Document_Filepath} = req.body;
 
-    const query = `UPDATE shops SET shop_Name =?, shop_Address =?, shop_Document_Filepath =? WHERE shop_id =?`;
-    const values = [shop_Name, shop_Address, shop_Document_Filepath, req.params.shop_id];
-    mysqlConnection.execute(query, values, (error, result) => {
+    const query = `UPDATE shops SET shop_Name = ?, shop_Address = ?, shop_Document_Filepath = ?, shop_Registration_Status = "Pending", updated_At = CURRENT_TIMESTAMP
+    WHERE shop_id = ?`; //shop_Registration_Status is changed to 'Pending' and updated_At is changed to the current date
+
+    const values = [shop_Name, shop_Address, shop_Document_Filepath, shop_id];
+    mysqlConnection.query(query, values, (error, result) => {
         if(error){
             console.error('Error updating repairshop registration details:', error);
             return res.status(500).json({error: 'Error updating repairshop registration details'});
@@ -171,19 +169,21 @@ module.exports.updateShopRegistrationDetails = (req, res) =>{
         res.status(200).json({message: 'Repairshop registration details updated', result: result});
     });
 };
-module.exports.updateShopPage = (req, res) => {
-    const {shop_id, shop_Name, shop_Address, shop_Email, shop_Mobile_No, shop_Landline_No, shop_Description} = req.body;
 
-    const query = `UPDATE shops SET shop_Name = ?, shop_Address = ?, shop_Email = ?, shop_Mobile_No = ?, shop_Landline_No = ?, shop_Coordinates = ?, shop_Description = ? WHERE shop_id = ?`;
+module.exports.updateShopPage = (req, res) => { //Added more values that can be updated by the shop owner
+    const {shop_Name, shop_Email, shop_Address, shop_AboutUs, shop_Service_Offer, shop_Mobile_No, shop_Landline_No, Shop_Page_Payment_Method, shop_Page_Status, shop_id} = req.body;
 
-    const values = [shop_id, shop_Name, shop_Address, shop_Email, shop_Mobile_No,shop_Landline_No,shop_Description, req.params.shop_id];
-    mysqlCon.query(query, values, (error, result) => {
+    const query = `UPDATE shops SET shop_Name = ?, shop_Email = ?, shop_Address = ?, shop_AboutUs = ?, shop_Service_Offer = ?, shop_Mobile_No = ?, shop_Landline_No = ?, 
+    Shop_Page_Payment_Method = ?, shop_Page_Status = ? WHERE shop_id = ?`;
+
+    const values = [shop_Name, shop_Email, shop_Address, shop_AboutUs, shop_Service_Offer, shop_Mobile_No, shop_Landline_No, Shop_Page_Payment_Method, shop_Page_Status, shop_id];
+    mysqlConnection.query(query, values, (error, result) => {
+
         if(error){
             console.error('Error updating repairshop:', error);
             return res.status(500).json({error: 'Error updating repairshop'});
         }
-        res.status(200).json(result);
-        res.status(200).json({message: 'Repairshop updated'});
+        res.status(200).json({message: 'Repairshop updated', result});
     });
 };
 
@@ -191,16 +191,15 @@ module.exports.updateShopPage = (req, res) => {
 module.exports.deleteRepairShop = (req, res) => {
     
     const{shop_id} = req.body;
-    const query = `DELETE FROM shop WHERE shop_id = ?`;
+    const query = `DELETE FROM shops WHERE shop_id = ?`;
 
     const values = [shop_id,req.params.shop_id];
-    mysqlConnection.execute(query, values, (error, result) => {
+    mysqlConnection.query(query, values, (error, result) => {
         if(error){
             console.error('Error deleting repairshop:', error);
             return res.status(500).json({error: 'Error deleting repairshop'});
         }
-        res.status(200).json({result: result});
-        res.status(200).json({message: 'Repairshop deleted'});
+        res.status(200).json({message: 'Repairshop deleted', result: result});
     });
 };
 
