@@ -17,5 +17,7 @@ router.get('/displayAllCustomerAccounts', customerController.displayAllCustomerA
 router.put('/updateCustomerAccount/:user_id', customerController.updateCustomerAccount);
 router.delete('/deleteCustomerAccount/:id', customerController.deleteCustomerAccount);
 
+// Login
+router.get('/login', accountController.loginAccount);
 
 module.exports = router;

@@ -1,6 +1,28 @@
 const User = require("../model/users")
 const mysqlConnection = require('../mysql/mysqlConnection')
 
+// Login Module
+module.exports.loginAccount = (req, res) => {
+    const { email, password } = req.body;
+    const query = `SELECT * FROM users WHERE email = ? AND password = ?`;
+    const values = [email, password];
+
+    mysqlConnection.query(query, values, (error, result) => {
+        if (error) {
+            console.error('Error logging in:', error);
+            return res.status(500).json({ error: 'Error logging in' });
+        }
+        
+        if (result.length > 0) {
+            // Login successful
+            return res.status(200).json(result);
+        } else {
+            // Incorrect email or password
+            return res.status(401).json({ error: 'Incorrect email or password' });
+        }
+    });
+}
+
 // this module checks the Users password  (Under review whether to keep or disregard)
 module.exports.checkPassword = (req,res) =>{
     const {password} = req.body;
