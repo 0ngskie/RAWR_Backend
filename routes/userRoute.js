@@ -20,4 +20,6 @@ router.delete('/deleteCustomerAccount/:id', customerController.deleteCustomerAcc
 // Login
 router.get('/login', accountController.loginAccount);
 
+router.put('/forgotPassword', accountController.forgotPassword);
+
 module.exports = router;
