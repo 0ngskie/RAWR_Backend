@@ -15,6 +15,7 @@ module.exports.loginAccount = (req, res) => {
         
         if (result.length > 0) {
             // Login successful
+            console.log({message: 'Login successful',});
             return res.status(200).json(result);
         } else {
             // Incorrect email or password
@@ -112,6 +113,21 @@ module.exports.editUserAccount = (req, res) =>{
             return res.status(500).json({ error: 'Error updating customer account' });
         }
         res.status(200).json(result);
+    });
+};
+
+// Password Reset
+module.exports.forgotPassword = (req,res) =>{
+    const {email, password} = req.body;
+    const query = `UPDATE users SET password = ? WHERE email = ?`;
+    const values = [password, email];
+    mysqlConnection.query(query, values, (error, result) => {
+        if (error) {
+            res.status(500).json({message:'Account email is not found within the database'});
+        } else {
+            
+            res.status(200).json({message: 'Password has been changed successfully'});
+        }
     });
 };
 

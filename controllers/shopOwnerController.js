@@ -59,9 +59,9 @@ module.exports.readOwner = (req, res) => {
 // Update
 module.exports.updateOwner = (req, res) => {
 
-    const {user_id, last_Name, first_Name, email, contact_No } = req.body;
-    const updateQuery = `UPDATE users SET last_Name = ?, first_Name = ?, email = ?, contact_No = ? WHERE user_id = ?`;
-    const updateValues = [last_Name, first_Name, email, contact_No, user_id];
+    const {user_id, last_Name, first_Name, email, contact_No, password} = req.body;
+    const updateQuery = `UPDATE users SET last_Name = ?, first_Name = ?, email = ?, contact_No = ?, password = ? WHERE user_id = ?`;
+    const updateValues = [last_Name, first_Name, email, contact_No, user_id, password];
 
     mysqlConnection.query(updateQuery, updateValues, (updateError, updateResult) => {
         if (updateError) {
